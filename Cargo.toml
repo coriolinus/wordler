@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 brotli = "3.3.2"
 dirs = "4.0.0"
+spinners = "2.0.0"
 thiserror = "1.0.30"
-ureq = "2.3.1"
+ureq = { version = "2.3.1", features = ["tls", "gzip", "brotli"] }
