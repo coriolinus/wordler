@@ -1,0 +1,12 @@
+[package]
+name = "wordler"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+brotli = "3.3.2"
+dirs = "4.0.0"
+thiserror = "1.0.30"
+ureq = "2.3.1"
