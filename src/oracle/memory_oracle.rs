@@ -1,27 +1,5 @@
-pub trait Oracle {
-    /// Return the number of characters in the target word.
-    fn word_length(&self) -> usize;
-
-    /// Return whether a word was correct, or feedback if it was not.
-    fn guess(&self, guess: &str) -> Result<(), Feedback>;
-}
-
-/// The disposition of a letter indicates how guessers should refine their list of potential words.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Disposition {
-    /// This letter does not appear in the target word.
-    NotInWord,
-    /// This letter appears at least once in the target word, elsewhere.
-    WrongPosition,
-    /// This letter appears in this position in the target word.
-    Correct,
-    /// The guess was shorter than the target word; this letter is missing.
-    Missing,
-    /// The guess was longer than the target workd; this letter is extra (and unchecked) otherwise.
-    Extra,
-}
-
-pub type Feedback = Vec<Disposition>;
+use crate::oracle::{Disposition, Error, Feedback, Oracle};
+use rand::seq::IteratorRandom;
 
 // This implementation feels dumb, but for words on the order of 5 chars long, this may actually
 // be more efficient than anything more complicated.
@@ -30,13 +8,18 @@ pub struct MemoryOracle {
 }
 
 impl Oracle for MemoryOracle {
-    fn word_length(&self) -> usize {
-        self.target.chars().count()
+    fn new() -> Result<Box<Self>, Error> {
+        // by default we pick a 5-character word
+        Self::create_random(5)
     }
 
-    fn guess(&self, guess: &str) -> Result<(), Feedback> {
+    fn word_length(&self) -> Result<usize, Error> {
+        Ok(self.target.chars().count())
+    }
+
+    fn guess(&self, guess: &str) -> Result<Result<(), Feedback>, Error> {
         if guess == self.target {
-            Ok(())
+            Ok(Ok(()))
         } else {
             let mut fb = Feedback::with_capacity(guess.len());
             for (have, want) in guess.chars().zip(self.target.chars()) {
@@ -64,7 +47,21 @@ impl Oracle for MemoryOracle {
             debug_assert!(fb.len() <= guess_chars);
             debug_assert!(!fb.iter().all(|&disp| disp == Disposition::Correct));
 
-            Err(fb)
+            Ok(Err(fb))
         }
+    }
+}
+
+impl MemoryOracle {
+    fn create_random(characters: usize) -> Result<Box<Self>, Error> {
+        let mut rng = rand::thread_rng();
+
+        let word = crate::wordlist::load()
+            .map_err(|err| Error::Io(Box::new(err)))?
+            .filter(|word| word.chars().count() == characters)
+            .choose(&mut rng)
+            .expect("word list was empty");
+
+        Ok(Box::new(Self { target: word }))
     }
 }

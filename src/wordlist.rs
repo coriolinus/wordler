@@ -23,7 +23,7 @@ impl<R> SpinnerReader<R> {
     fn new(inner: R, message: String, total_expected: Option<usize>) -> Self {
         let sr = SpinnerReader {
             inner,
-            message: message,
+            message,
             read_so_far: 0,
             total_expected,
             spinner: spinners::Spinner::new(&SPINNER_STYLE, String::new()),
@@ -78,7 +78,9 @@ fn read_cache() -> Result<impl Iterator<Item = String>, Error> {
 fn create_cache() -> Result<(), Error> {
     let path = cache_path()?;
     let mut writer = std::fs::File::create(path).map_err(Error::OpenCache)?;
-    let response = ureq::get(WORDS_SOURCE).call()?;
+    let response = ureq::get(WORDS_SOURCE)
+        .call()
+        .map_err(|err| Error::Download(Box::new(err)))?;
     let length = response
         .header("Content-Length")
         .map(|l| l.parse().ok())
@@ -123,7 +125,7 @@ pub enum Error {
     #[error("could not open the cache file")]
     OpenCache(#[source] std::io::Error),
     #[error("could not download the word list")]
-    Download(#[from] ureq::Error),
+    Download(#[source] Box<ureq::Error>),
     #[error("could not brotli-compress the cache file")]
     Encode(#[source] std::io::Error),
     #[error("cache not valid after download")]
