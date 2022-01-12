@@ -1,3 +1,6 @@
+#[cfg(feature = "human_petitioner")]
+pub mod human_petitioner;
+
 /// A petitioner must consider the pronouncements of the Oracle to discover a secret word.
 ///
 /// It must implement a state machine. The proper sequence of calls is:

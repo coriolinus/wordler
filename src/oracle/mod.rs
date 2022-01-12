@@ -30,6 +30,7 @@ pub enum Disposition {
 }
 
 pub type Feedback = Vec<Disposition>;
+pub type FeedbackRef = [Disposition];
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
