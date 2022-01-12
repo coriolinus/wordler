@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use crate::oracle::{Disposition, Error, Feedback, Oracle};
 use rand::seq::IteratorRandom;
 
@@ -5,7 +7,7 @@ use rand::seq::IteratorRandom;
 // be more efficient than anything more complicated.
 pub struct MemoryOracle {
     target: String,
-    guesses: usize,
+    guesses: Cell<usize>,
     pub max_guesses: Option<usize>,
 }
 
@@ -20,9 +22,13 @@ impl Oracle for MemoryOracle {
     }
 
     fn guess(&self, guess: &str) -> Result<Result<(), Feedback>, Error> {
+        let mut guesses = self.guesses.get();
+        guesses += 1;
+        self.guesses.set(guesses);
+
         if self
             .max_guesses
-            .map(|max_guesses| self.guesses > max_guesses)
+            .map(|max_guesses| guesses > max_guesses)
             .unwrap_or_default()
         {
             Err(Error::TooManyGuesses)
@@ -73,7 +79,7 @@ impl MemoryOracle {
         Ok(Box::new(Self {
             target: word,
             max_guesses: None,
-            guesses: 0,
+            guesses: Cell::new(0),
         }))
     }
 }
