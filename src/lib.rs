@@ -7,7 +7,7 @@ pub use oracle::Oracle;
 pub use petitioner::Petitioner;
 
 #[cfg(feature = "pretty_feedback")]
-fn print_feedback(guess: &str, feedback: &crate::oracle::FeedbackRef) {
+pub fn print_feedback(guess: &str, feedback: &crate::oracle::FeedbackRef) {
     use crate::oracle::Disposition::*;
     use itertools::Itertools;
     use std::io::Write;
@@ -21,14 +21,14 @@ fn print_feedback(guess: &str, feedback: &crate::oracle::FeedbackRef) {
     };
     let wrong_position = {
         let mut cs = ColorSpec::new();
-        cs.set_fg(Some(Color::White));
+        cs.set_fg(Some(Color::Black));
         cs.set_bg(Some(Color::Yellow));
         cs.set_intense(true);
         cs
     };
     let correct = {
         let mut cs = ColorSpec::new();
-        cs.set_fg(Some(Color::White));
+        cs.set_fg(Some(Color::Black));
         cs.set_bg(Some(Color::Green));
         cs.set_intense(true);
         cs.set_bold(true);
@@ -75,7 +75,7 @@ fn print_feedback(guess: &str, feedback: &crate::oracle::FeedbackRef) {
 }
 
 #[cfg(not(feature = "pretty_feedback"))]
-fn print_feedback(guess: &str, feedback: &crate::oracle::FeedbackRef) {
+pub fn print_feedback(guess: &str, feedback: &crate::oracle::FeedbackRef) {
     println!("guess: {}", guess);
     println!("feedback: {:?}", feedback);
 }
@@ -86,11 +86,7 @@ where
     Oracle: 'static + oracle::Oracle,
     Petitioner: 'static + petitioner::Petitioner,
 {
-    wordle_config(
-        show_feedback,
-        |_: &mut Box<Oracle>| {},
-        |_: &mut Box<Petitioner>| {},
-    )
+    wordle_config(show_feedback, |_: &mut Oracle| {}, |_: &mut Petitioner| {})
 }
 
 /// Run a game of wordle according to the oracle and petitioner.
@@ -105,21 +101,21 @@ pub fn wordle_config<Oracle, Petitioner, AdjustOracle, AdjustPetitioner>(
 where
     Oracle: 'static + oracle::Oracle,
     Petitioner: 'static + petitioner::Petitioner,
-    AdjustOracle: FnOnce(&mut Box<Oracle>),
-    AdjustPetitioner: FnOnce(&mut Box<Petitioner>),
+    AdjustOracle: FnOnce(&mut Oracle),
+    AdjustPetitioner: FnOnce(&mut Petitioner),
 {
     use std::any::Any;
 
     let oracle = {
         let mut oracle = Oracle::new()?;
-        let oracle_any = &mut oracle as &mut dyn Any;
+        let oracle_any = &mut *oracle as &mut dyn Any;
         adjust_oracle(oracle_any.downcast_mut().expect("type has to work here"));
         oracle
     };
 
     let word_length = oracle.word_length()?;
     let mut petitioner = Petitioner::new(word_length)?;
-    let petitioner_any = &mut petitioner as &mut dyn Any;
+    let petitioner_any = &mut *petitioner as &mut dyn Any;
     adjust_petitioner(
         petitioner_any
             .downcast_mut()
