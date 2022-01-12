@@ -83,12 +83,48 @@ fn print_feedback(guess: &str, feedback: &crate::oracle::FeedbackRef) {
 /// Run a game of wordle according to the oracle and petitioner.
 pub fn wordle<Oracle, Petitioner>(show_feedback: bool) -> Result<String, Box<dyn std::error::Error>>
 where
-    Oracle: oracle::Oracle,
-    Petitioner: petitioner::Petitioner,
+    Oracle: 'static + oracle::Oracle,
+    Petitioner: 'static + petitioner::Petitioner,
 {
-    let oracle = Oracle::new()?;
+    wordle_config(
+        show_feedback,
+        |_: &mut Box<Oracle>| {},
+        |_: &mut Box<Petitioner>| {},
+    )
+}
+
+/// Run a game of wordle according to the oracle and petitioner.
+///
+/// The callback functions are each invoked once, after the relevant struct is initialized but before
+/// it is used.
+pub fn wordle_config<Oracle, Petitioner, AdjustOracle, AdjustPetitioner>(
+    show_feedback: bool,
+    adjust_oracle: AdjustOracle,
+    adjust_petitioner: AdjustPetitioner,
+) -> Result<String, Box<dyn std::error::Error>>
+where
+    Oracle: 'static + oracle::Oracle,
+    Petitioner: 'static + petitioner::Petitioner,
+    AdjustOracle: FnOnce(&mut Box<Oracle>),
+    AdjustPetitioner: FnOnce(&mut Box<Petitioner>),
+{
+    use std::any::Any;
+
+    let oracle = {
+        let mut oracle = Oracle::new()?;
+        let oracle_any = &mut oracle as &mut dyn Any;
+        adjust_oracle(oracle_any.downcast_mut().expect("type has to work here"));
+        oracle
+    };
+
     let word_length = oracle.word_length()?;
-    let mut petitioner = Petitioner::new(word_length);
+    let mut petitioner = Petitioner::new(word_length)?;
+    let petitioner_any = &mut petitioner as &mut dyn Any;
+    adjust_petitioner(
+        petitioner_any
+            .downcast_mut()
+            .expect("type has to work here"),
+    );
 
     loop {
         let guess = petitioner.prepare_guess()?;

@@ -16,6 +16,7 @@ ureq = { version = "2.3.1", features = ["tls", "gzip", "brotli"], optional = tru
 
 [features]
 default = []
+dict_solver = ["itertools", "rand", "wordlist"]
 human_petitioner = ["ezio", "pretty_feedback"]
 memory_oracle = ["rand", "wordlist"]
 pretty_feedback = ["itertools", "termcolor"]
@@ -28,3 +29,7 @@ required-features = ["wordlist"]
 [[bin]]
 name = "local-wordle"
 required-features = ["human_petitioner", "memory_oracle"]
+
+[[bin]]
+name = "bot-match"
+required-features = ["dict_solver", "memory_oracle"]

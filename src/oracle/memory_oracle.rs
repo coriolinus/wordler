@@ -5,6 +5,8 @@ use rand::seq::IteratorRandom;
 // be more efficient than anything more complicated.
 pub struct MemoryOracle {
     target: String,
+    guesses: usize,
+    pub max_guesses: Option<usize>,
 }
 
 impl Oracle for MemoryOracle {
@@ -18,7 +20,13 @@ impl Oracle for MemoryOracle {
     }
 
     fn guess(&self, guess: &str) -> Result<Result<(), Feedback>, Error> {
-        if guess == self.target {
+        if self
+            .max_guesses
+            .map(|max_guesses| self.guesses > max_guesses)
+            .unwrap_or_default()
+        {
+            Err(Error::TooManyGuesses)
+        } else if guess == self.target {
             Ok(Ok(()))
         } else {
             let mut fb = Feedback::with_capacity(guess.len());
@@ -62,6 +70,10 @@ impl MemoryOracle {
             .choose(&mut rng)
             .expect("word list was empty");
 
-        Ok(Box::new(Self { target: word }))
+        Ok(Box::new(Self {
+            target: word,
+            max_guesses: None,
+            guesses: 0,
+        }))
     }
 }

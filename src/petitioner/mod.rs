@@ -1,3 +1,5 @@
+#[cfg(feature = "dict_solver")]
+pub mod dict_solver;
 #[cfg(feature = "human_petitioner")]
 pub mod human_petitioner;
 
@@ -11,7 +13,7 @@ pub mod human_petitioner;
 ///     - `feedback`
 pub trait Petitioner {
     /// Create a petitioner who will guess words of this number of characters.
-    fn new(word_length: usize) -> Self;
+    fn new(word_length: usize) -> Result<Box<Self>, Error>;
 
     /// The petitioner must create a guess satisfying known constraints.
     ///
@@ -34,4 +36,6 @@ pub enum Error {
     AwaitingFeedback,
     #[error("cannot provide new feedback without a new guess")]
     UnexpectedFeedback,
+    #[error("feedback provided is inappropriate for the provided guess")]
+    InappropriateFeedback,
 }

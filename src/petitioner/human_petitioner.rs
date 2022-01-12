@@ -6,9 +6,9 @@ use crate::petitioner::Petitioner;
 pub struct HumanPetitioner;
 
 impl Petitioner for HumanPetitioner {
-    fn new(word_length: usize) -> Self {
+    fn new(word_length: usize) -> Result<Box<Self>, super::Error> {
         println!("You must guess a word of {} characters.", word_length);
-        Self
+        Ok(Box::new(Self))
     }
 
     fn prepare_guess(&mut self) -> Result<String, super::Error> {
